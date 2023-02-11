@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT</title>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"
+        integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">
+    <!-- JavaScript -->
+    <script src="./js/function.js"></script>
+    <script src="./js/chatgpt.js"></script>
+    <script src="./js/speech.js"></script>
+    <!-- CSS -->
+    <style>
+        html {
+            width: 100%;
+            height: 99%;
+        }
+
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        li {
+            margin: 10px;
+            width: fit-content;
+        }
+
+        .full-height {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container full-height">
+        <div class="row full-height">
+            <div class="col-md-1"></div>
+            <div class="col-md-10 full-height">
+                <!-- 对话框 -->
+                <div class="row" style="height: 70%;">
+                    <div class="col-md-12 full-height">
+                        <div id="chatBoxWindow" class="panel panel-default full-height" style="overflow:auto">
+                            <ul id="chatBox" class="list-group"></ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- 输入框 -->
+                <div class="row" style="height: 20%;">
+                    <div class="col-md-12 full-height">
+                        <div class="panel panel-default full-height">
+                            <div class="panel-body">
+                                <span id="requestTextInterim" style="color: grey;"></span>
+                                <span id="requestTextFinal"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 按钮 -->
+                <div class="row" style="height: 10%;">
+                    <div class="col-md-12 full-height">
+                        <div class="btn-group role=" group">
+                            <button id="startRec" type="button" class="btn btn-default">Start Rec</button>
+                            <button id="stopRec" type="button" class="btn btn-default">Stop Rec</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-1"></div>
+        </div>
+    </div>
+    <script>
+        function newMessage(message, isUser) {
+            var node = document.createElement("li");
+            if (isUser) {
+                node.setAttribute("class", "list-group-item list-group-item-success");
+            } else {
+                node.setAttribute("class", "list-group-item list-group-item-info");
+            }
+            node.innerText = message;
+            chatBox.appendChild(node);
+            chatBoxWindow.scrollTop = chatBoxWindow.scrollHeight;
+        }
+
+        var apiKey = getQueryVariable("key");
+        var recognition = new webkitSpeechRecognition();
+
+        recognition.continuous = true;      // 持续识别
+        recognition.interimResults = true;  // 返回中间结果
+        recognition.lang = "en-us";         // 识别语言
+
+        recognition.onresult = function (event) {
+            var final = "";
+            var interim = "";
+            for (var i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    final += event.results[i][0].transcript;
+                } else {
+                    interim += event.results[i][0].transcript;
+                }
+            }
+            if (final.length > 0) {
+                recognition.stop();
+                requestTextInterim.innerText = "";
+                requestTextFinal.innerText = final;
+                newMessage(final, true);
+                chatGPT(apiKey, final, function (resText) {
+                    if (resText == "401") {
+                        newMessage("Need api key: GET /?key=<api-key>", false);
+                    } else if (resText == "Error") {
+                        newMessage("Network error", false);
+                    } else {
+                        newMessage(resText, false);
+                        speak(resText);
+                    }
+                });
+            } else {
+                requestTextFinal.innerText = "";
+                requestTextInterim.innerText = interim;
+            }
+        };
+
+        startRec.onclick = function () {
+            cancelSpeak();
+            recognition.start();
+        };
+        stopRec.onclick = function () {
+            recognition.stop();
+        }
+    </script>
+</body>
+
+</html>
