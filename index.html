@@ -54,8 +54,8 @@
                     <div class="col-md-12 full-height">
                         <div class="panel panel-default full-height">
                             <div class="panel-body">
-                                <span id="requestTextInterim" style="color: grey;"></span>
-                                <span id="requestTextFinal"></span>
+                                <!-- <span id="requestTextInterim" contenteditable="true" style="color: grey;"></span> -->
+                                <span id="requestTextFinal" contenteditable="true"></span>
                             </div>
                         </div>
                     </div>
@@ -66,6 +66,7 @@
                         <div class="btn-group role=" group">
                             <button id="startRec" type="button" class="btn btn-default">Start Rec</button>
                             <button id="stopRec" type="button" class="btn btn-default">Stop Rec</button>
+                            <button id="send" type="button" class="btn btn-default">Send</button>
                         </div>
                     </div>
                 </div>
@@ -105,22 +106,9 @@
             }
             if (final.length > 0) {
                 recognition.stop();
-                requestTextInterim.innerText = "";
                 requestTextFinal.innerText = final;
-                newMessage(final, true);
-                chatGPT(apiKey, final, function (resText) {
-                    if (resText == "401") {
-                        newMessage("Need api key: GET /?key=<api-key>", false);
-                    } else if (resText == "Error") {
-                        newMessage("Network error", false);
-                    } else {
-                        newMessage(resText, false);
-                        speak(resText);
-                    }
-                });
             } else {
-                requestTextFinal.innerText = "";
-                requestTextInterim.innerText = interim;
+                requestTextFinal.innerText = interim;
             }
         };
 
@@ -130,6 +118,20 @@
         };
         stopRec.onclick = function () {
             recognition.stop();
+        }
+        send.onclick = function () {
+            let final = requestTextFinal.innerText;
+            newMessage(final, true);
+            chatGPT(apiKey, final, function (resText) {
+                if (resText == "401") {
+                    newMessage("Need api key: GET /?key=<api-key>", false);
+                } else if (resText == "Error") {
+                    newMessage("Network error", false);
+                } else {
+                    newMessage(resText, false);
+                    speak(resText);
+                }
+            });
         }
     </script>
 </body>
